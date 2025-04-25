@@ -1,5 +1,3 @@
-// © 2016 Steve McCoy under the MIT license. See LICENSE for details.
-
 package ogg
 
 import (
@@ -61,14 +59,16 @@ var oggs = []byte{'O', 'g', 'g', 'S'}
 //
 // It is safe to call Decode concurrently on distinct Decoders if their Readers are distinct.
 // Otherwise, the behavior is undefined.
-func (d *Decoder) Decode() (Page, error) {
+func (d *Decoder) Decode() (Page, int, error) {
+	nread := 0
 	hbuf := d.buf[0:headsz]
 	b := 0
 	for {
-		_, err := io.ReadFull(d.r, hbuf[b:])
+		n, err := io.ReadFull(d.r, hbuf[b:])
 		if err != nil {
-			return Page{}, err
+			return Page{}, 0, err
 		}
+		nread += n
 
 		i := bytes.Index(hbuf, oggs)
 		if i == 0 {
@@ -95,15 +95,16 @@ func (d *Decoder) Decode() (Page, error) {
 	_ = binary.Read(bytes.NewBuffer(hbuf), byteOrder, &h)
 
 	if h.Nsegs < 1 {
-		return Page{}, ErrBadSegs
+		return Page{}, 0, ErrBadSegs
 	}
 
 	nsegs := int(h.Nsegs)
 	segtbl := d.buf[headsz : headsz+nsegs]
-	_, err := io.ReadFull(d.r, segtbl)
+	n, err := io.ReadFull(d.r, segtbl)
 	if err != nil {
-		return Page{}, err
+		return Page{}, nread, err
 	}
+	nread += n
 
 	// A page can contain multiple packets; record their lengths from the table
 	// now and slice up the payload after reading it.
@@ -124,10 +125,11 @@ func (d *Decoder) Decode() (Page, error) {
 	}
 
 	payload := d.buf[headsz+nsegs : headsz+nsegs+payloadlen]
-	_, err = io.ReadFull(d.r, payload)
+	n, err = io.ReadFull(d.r, payload)
 	if err != nil {
-		return Page{}, err
+		return Page{}, nread, err
 	}
+	nread += n
 
 	page := d.buf[0 : headsz+nsegs+payloadlen]
 	// Clear out existing crc before calculating it
@@ -137,7 +139,7 @@ func (d *Decoder) Decode() (Page, error) {
 	page[25] = 0
 	crc := crc32(page)
 	if crc != h.Crc {
-		return Page{}, ErrBadCrc{h.Crc, crc}
+		return Page{}, nread, ErrBadCrc{h.Crc, crc}
 	}
 
 	packets := make([][]byte, len(packetlens))
@@ -147,5 +149,5 @@ func (d *Decoder) Decode() (Page, error) {
 		s += l
 	}
 
-	return Page{h.HeaderType, h.Serial, h.Granule, packets}, nil
+	return Page{h.HeaderType, h.Serial, h.Granule, packets}, nread, nil
 }

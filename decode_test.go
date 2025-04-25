@@ -21,7 +21,7 @@ func TestBasicDecode(t *testing.T) {
 
 	d := NewDecoder(&b)
 
-	p, err := d.Decode()
+	p, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -66,7 +66,7 @@ func TestBasicMultiDecode(t *testing.T) {
 
 	d := NewDecoder(&b)
 
-	p, err := d.Decode()
+	p, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -95,7 +95,7 @@ func TestBasicMultiDecode(t *testing.T) {
 		t.Fatalf("bytes != expected:\n%x\n%x", p.Packets[0], expect)
 	}
 
-	p, err = d.Decode()
+	p, _, err = d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -136,7 +136,7 @@ func TestMultipacketDecode(t *testing.T) {
 
 	d := NewDecoder(&b)
 
-	p, err := d.Decode()
+	p, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -187,7 +187,7 @@ func TestBadCrc(t *testing.T) {
 
 	d := NewDecoder(&b)
 
-	_, err = d.Decode()
+	_, _, err = d.Decode()
 	if err == nil {
 		t.Fatal("unexpected lack of Decode error")
 	}
@@ -201,7 +201,7 @@ func TestBadCrc(t *testing.T) {
 func TestShortDecode(t *testing.T) {
 	var b bytes.Buffer
 	d := NewDecoder(&b)
-	_, err := d.Decode()
+	_, _, err := d.Decode()
 	if err != io.EOF {
 		t.Fatal("expected EOF, got:", err)
 	}
@@ -212,7 +212,7 @@ func TestShortDecode(t *testing.T) {
 		t.Fatal("unexpected Encode error:", err)
 	}
 	d = NewDecoder(&io.LimitedReader{R: &b, N: headsz})
-	_, err = d.Decode()
+	_, _, err = d.Decode()
 	if err != io.EOF {
 		t.Fatal("expected EOF, got:", err)
 	}
@@ -224,7 +224,7 @@ func TestShortDecode(t *testing.T) {
 		t.Fatal("unexpected Encode error:", err)
 	}
 	d = NewDecoder(&io.LimitedReader{R: &b, N: int64(b.Len()) - 1})
-	_, err = d.Decode()
+	_, _, err = d.Decode()
 	if err != io.ErrUnexpectedEOF {
 		t.Fatal("expected ErrUnexpectedEOF, got:", err)
 	}
@@ -242,7 +242,7 @@ func TestBadSegs(t *testing.T) {
 	b.Bytes()[26] = 0
 
 	d := NewDecoder(&b)
-	_, err = d.Decode()
+	_, _, err = d.Decode()
 	if err != ErrBadSegs {
 		t.Fatal("expected ErrBadSegs, got:", err)
 	}
@@ -274,7 +274,7 @@ func TestSyncDecode(t *testing.T) {
 
 	d := NewDecoder(&b)
 
-	p, err := d.Decode()
+	p, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -320,7 +320,7 @@ func TestLongDecode(t *testing.T) {
 	}
 
 	d := NewDecoder(&b)
-	p1, err := d.Decode()
+	p1, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -334,7 +334,7 @@ func TestLongDecode(t *testing.T) {
 		t.Fatalf("packet is wrong:\n\t%x\nvs\n\t%x\n", p1.Packets[0], junk.Bytes()[:mps])
 	}
 
-	p2, err := d.Decode()
+	p2, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -348,7 +348,7 @@ func TestLongDecode(t *testing.T) {
 		t.Fatalf("packet is wrong:\n\t%x\nvs\n\t%x\n", p2.Packets[0], junk.Bytes()[mps:mps+mps])
 	}
 
-	p3, err := d.Decode()
+	p3, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -380,7 +380,7 @@ func TestLongMultipacketDecode(t *testing.T) {
 	}
 
 	d := NewDecoder(&b)
-	p1, err := d.Decode()
+	p1, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -400,7 +400,7 @@ func TestLongMultipacketDecode(t *testing.T) {
 		t.Fatalf("packet is wrong:\n\t%x\nvs\n\t%x\n", p1.Packets[1], junk.Bytes()[50:50+mps-mss])
 	}
 
-	p2, err := d.Decode()
+	p2, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -419,7 +419,7 @@ func TestLongMultipacketDecode(t *testing.T) {
 		t.Fatalf("packet is wrong:\n\t%x\nvs\n\t%x\n", p2.Packets[0], junk.Bytes()[start:start+mps])
 	}
 
-	p3, err := d.Decode()
+	p3, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -455,7 +455,7 @@ func TestEvenLongerMultipacketDecode(t *testing.T) {
 	}
 
 	d := NewDecoder(&b)
-	p1, err := d.Decode()
+	p1, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -475,7 +475,7 @@ func TestEvenLongerMultipacketDecode(t *testing.T) {
 		t.Fatalf("packet is wrong:\n\t%x\nvs\n\t%x\n", p1.Packets[1], junk.Bytes()[50:50+mps-mss])
 	}
 
-	p2, err := d.Decode()
+	p2, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}
@@ -494,7 +494,7 @@ func TestEvenLongerMultipacketDecode(t *testing.T) {
 		t.Fatalf("packet is wrong:\n\t%x\nvs\n\t%x\n", p2.Packets[0], junk.Bytes()[start:start+mps])
 	}
 
-	p3, err := d.Decode()
+	p3, _, err := d.Decode()
 	if err != nil {
 		t.Fatal("unexpected Decode error:", err)
 	}

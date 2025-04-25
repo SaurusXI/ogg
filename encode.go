@@ -1,5 +1,3 @@
-// © 2016 Steve McCoy under the MIT license. See LICENSE for details.
-
 package ogg
 
 import (

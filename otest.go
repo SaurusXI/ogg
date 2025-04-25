@@ -1,7 +1,5 @@
 //go:build ignore
 
-// © 2022 Steve McCoy under the MIT license. See LICENSE for details.
-
 package main
 
 // This is a simple test program which can be run like so:
@@ -14,12 +12,12 @@ import (
 	"fmt"
 	"os"
 
-	"mccoy.space/g/ogg"
+	"github.com/SaurusXI/ogg"
 )
 
 func main() {
 	decoder := ogg.NewDecoder(os.Stdin)
-	page, err := decoder.Decode()
+	page, _, err := decoder.Decode()
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		os.Exit(1)
@@ -28,7 +26,7 @@ func main() {
 	encoder.EncodeBOS(page.Granule, page.Packets)
 
 	for {
-		page, err := decoder.Decode()
+		page, _, err := decoder.Decode()
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
 			break

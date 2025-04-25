@@ -1,5 +1,3 @@
-// © 2016 Steve McCoy under the MIT license. See LICENSE for details.
-
 /*
 Package ogg implements encoding and decoding of OGG streams as defined in
 http://xiph.org/ogg/doc/rfc3533.txt

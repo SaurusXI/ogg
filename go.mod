@@ -1,3 +1,3 @@
-module mccoy.space/g/ogg
+module github.com/SaurusXI/ogg
 
 go 1.19
