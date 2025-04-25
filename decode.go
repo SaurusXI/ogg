@@ -66,7 +66,7 @@ func (d *Decoder) Decode() (Page, int, error) {
 	for {
 		n, err := io.ReadFull(d.r, hbuf[b:])
 		if err != nil {
-			return Page{}, 0, err
+			return Page{}, nread, err
 		}
 		nread += n
 
