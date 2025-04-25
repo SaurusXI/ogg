@@ -65,10 +65,10 @@ func (d *Decoder) Decode() (Page, int, error) {
 	b := 0
 	for {
 		n, err := io.ReadFull(d.r, hbuf[b:])
+		nread += n
 		if err != nil {
 			return Page{}, nread, err
 		}
-		nread += n
 
 		i := bytes.Index(hbuf, oggs)
 		if i == 0 {
@@ -101,10 +101,10 @@ func (d *Decoder) Decode() (Page, int, error) {
 	nsegs := int(h.Nsegs)
 	segtbl := d.buf[headsz : headsz+nsegs]
 	n, err := io.ReadFull(d.r, segtbl)
+	nread += n
 	if err != nil {
 		return Page{}, nread, err
 	}
-	nread += n
 
 	// A page can contain multiple packets; record their lengths from the table
 	// now and slice up the payload after reading it.
@@ -126,10 +126,10 @@ func (d *Decoder) Decode() (Page, int, error) {
 
 	payload := d.buf[headsz+nsegs : headsz+nsegs+payloadlen]
 	n, err = io.ReadFull(d.r, payload)
+	nread += n
 	if err != nil {
 		return Page{}, nread, err
 	}
-	nread += n
 
 	page := d.buf[0 : headsz+nsegs+payloadlen]
 	// Clear out existing crc before calculating it
