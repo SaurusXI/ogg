@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
+	"time"
 )
 
 // A Decoder decodes an ogg stream page-by-page with its Decode method.
@@ -150,4 +152,55 @@ func (d *Decoder) Decode() (Page, int, error) {
 	}
 
 	return Page{h.HeaderType, h.Serial, h.Granule, packets}, nread, nil
+}
+
+// ParseOpusFrameDuration parses the frame duration from an Opus packet.
+// Assumes the packet has a valid TOC byte.
+func (d *Decoder) GetPacketDuration(pkt []byte) (time.Duration, error) {
+	if len(pkt) == 0 {
+		return 0, fmt.Errorf("empty opus packet")
+	}
+
+	toc := pkt[0]
+
+	config := toc >> 3        // Bits 0-4 (upper 5 bits)
+	frameCountCode := toc & 0x03 // Bits 6-7 (lower 2 bits)
+
+	// Mapping for frame size based on config
+	var frameSizeMs int
+
+	switch config {
+	case 0, 1, 2, 3:
+		frameSizeMs = 10
+	case 4, 5, 6, 7:
+		frameSizeMs = 20
+	case 8, 9, 10, 11:
+		frameSizeMs = 40
+	case 12, 13, 14, 15:
+		frameSizeMs = 60
+	default:
+		frameSizeMs = 20 // default/fallback (common for Opus packets)
+	}
+
+	// Determine frame count
+	frameCount := 1
+	switch frameCountCode {
+	case 0:
+		frameCount = 1
+	case 1:
+		frameCount = 2
+	case 2:
+		frameCount = 2 // CELT only packets with padding (rare)
+	case 3:
+		if len(pkt) < 2 {
+			return 0, fmt.Errorf("invalid opus packet: frame count code 3 but packet is too short")
+		}
+		frameCount = int(pkt[1]) + 1
+		if frameCount < 1 {
+			return 0, fmt.Errorf("invalid opus packet: frame count code 3 but frame count is less than 1")
+		}
+	}
+
+	totalDurationMs := frameSizeMs * frameCount
+	return time.Duration(totalDurationMs) * time.Millisecond, nil
 }
